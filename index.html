@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EventosViva — Sistema de Boletaje</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  /* ─── DESIGN TOKENS ─── */
+  :root {
+    --ink:    #0A0A0F;
+    --paper:  #F7F5F0;
+    --mid:    #E8E4DC;
+    --muted:  #9B9690;
+    --volt:   #C8F000;   /* signature accent — electric lime on black */
+    --volt2:  #9EBB00;
+    --danger: #FF3B5C;
+    --warn:   #FF9F00;
+    --ok:     #00C46A;
+    --white:  #FFFFFF;
+
+    --r-sm:   4px;
+    --r-md:   8px;
+    --r-lg:   16px;
+    --r-pill: 999px;
+
+    --shadow: 0 2px 16px rgba(0,0,0,.12);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,.18);
+
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body:    'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  button { cursor: pointer; font-family: var(--font-body); }
+  input, select, textarea { font-family: var(--font-body); }
+  a { text-decoration: none; color: inherit; }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--mid); }
+  ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+
+  /* ─── GLOBAL UTILS ─── */
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ─── TOAST ─── */
+  #toast-root { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: .5rem; pointer-events: none; }
+  .toast {
+    background: var(--ink); color: var(--white);
+    padding: .75rem 1.25rem; border-radius: var(--r-md);
+    font-size: .875rem; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    animation: slideIn .25s ease;
+    display: flex; align-items: center; gap: .5rem;
+    min-width: 260px; max-width: 380px;
+    pointer-events: all;
+  }
+  .toast.success { border-left: 3px solid var(--ok); }
+  .toast.error   { border-left: 3px solid var(--danger); }
+  .toast.warn    { border-left: 3px solid var(--warn); }
+  @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ─── NAV ─── */
+  .nav {
+    background: var(--ink);
+    color: var(--white);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 2px solid var(--volt);
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    color: var(--volt);
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .nav-brand span { color: var(--white); }
+  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+  .nav-link {
+    color: rgba(255,255,255,.7);
+    font-size: .875rem; font-weight: 500;
+    padding: .4rem .8rem;
+    border-radius: var(--r-sm);
+    transition: all .15s;
+    border: none; background: none;
+  }
+  .nav-link:hover, .nav-link.active { color: var(--white); background: rgba(255,255,255,.1); }
+  .nav-link.volt { background: var(--volt); color: var(--ink); }
+  .nav-link.volt:hover { background: var(--volt2); }
+  .nav-badge {
+    background: var(--danger);
+    color: var(--white);
+    font-size: .65rem; font-weight: 700;
+    padding: .1rem .4rem; border-radius: var(--r-pill);
+    margin-left: .3rem;
+  }
+
+  /* ─── PAGE LAYOUTS ─── */
+  .page { min-height: calc(100vh - 60px); }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+  .section { padding: 2rem 0; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--white);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--mid);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem;
+  }
+  .card-body { padding: 1.5rem; }
+  .card-title { font-size: 1rem; font-weight: 700; }
+
+  /* ─── EVENT CARD (PUBLIC) ─── */
+  .event-card {
+    background: var(--white);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform .2s, box-shadow .2s;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+  .event-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--volt); }
+  .event-card-top {
+    background: var(--ink);
+    color: var(--white);
+    padding: 1.5rem;
+    min-height: 120px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    position: relative;
+  }
+  .event-card-status {
+    position: absolute; top: 1rem; right: 1rem;
+    padding: .25rem .75rem; border-radius: var(--r-pill);
+    font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .event-card-status.active  { background: var(--volt); color: var(--ink); }
+  .event-card-status.cancelled { background: var(--danger); color: var(--white); }
+  .event-card-title { font-size: 1.2rem; font-weight: 700; line-height: 1.3; }
+  .event-card-body { padding: 1rem 1.25rem 1.25rem; }
+  .event-meta { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1rem; }
+  .event-meta-item { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--muted); }
+  .event-meta-item svg { flex-shrink: 0; }
+  .event-zones { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .zone-pill {
+    display: flex; align-items: center; gap: .3rem;
+    padding: .3rem .7rem; border-radius: var(--r-pill);
+    font-size: .75rem; font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .zone-vip  { background: #FFF3CD; color: #856404; border: 1px solid #FFEAA0; }
+  .zone-pref { background: #D1ECF1; color: #0C5460; border: 1px solid #B8DAFF; }
+  .zone-gen  { background: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
+
+  /* ─── FORMS ─── */
+  .form-group { display: flex; flex-direction: column; gap: .4rem; }
+  .form-label { font-size: .8rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .05em; }
+  .form-input, .form-select, .form-textarea {
+    border: 1.5px solid var(--mid);
+    border-radius: var(--r-md);
+    padding: .65rem .9rem;
+    font-size: .9rem;
+    transition: border-color .15s, box-shadow .15s;
+    background: var(--white);
+    width: 100%;
+    color: var(--ink);
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--volt2);
+    box-shadow: 0 0 0 3px rgba(200,240,0,.2);
+  }
+  .form-input.error, .form-select.error { border-color: var(--danger); }
+  .form-error { font-size: .78rem; color: var(--danger); font-weight: 500; }
+  .form-hint  { font-size: .78rem; color: var(--muted); }
+  .form-grid { display: grid; gap: 1rem; }
+  .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .6rem 1.2rem; border-radius: var(--r-md);
+    font-size: .875rem; font-weight: 600;
+    border: none; transition: all .15s;
+    cursor: pointer; white-space: nowrap;
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary   { background: var(--ink); color: var(--white); }
+  .btn-primary:not(:disabled):hover { background: #1a1a2e; }
+  .btn-volt      { background: var(--volt); color: var(--ink); }
+  .btn-volt:not(:disabled):hover { background: var(--volt2); }
+  .btn-outline   { background: transparent; color: var(--ink); border: 1.5px solid var(--mid); }
+  .btn-outline:not(:disabled):hover { background: var(--mid); }
+  .btn-danger    { background: var(--danger); color: var(--white); }
+  .btn-danger:not(:disabled):hover { background: #e0003a; }
+  .btn-sm        { padding: .4rem .8rem; font-size: .8rem; }
+  .btn-lg        { padding: .85rem 1.8rem; font-size: 1rem; }
+  .btn-icon      { padding: .4rem; border-radius: var(--r-sm); }
+
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x: auto; }
+  .table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+  .table th {
+    text-align: left; padding: .75rem 1rem;
+    background: var(--paper); color: var(--muted);
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 600;
+    border-bottom: 2px solid var(--mid);
+  }
+  .table td { padding: .8rem 1rem; border-bottom: 1px solid var(--mid); vertical-align: middle; }
+  .table tr:last-child td { border-bottom: none; }
+  .table tbody tr:hover { background: var(--paper); }
+
+  /* ─── BADGES ─── */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: .25rem .65rem; border-radius: var(--r-pill);
+    font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .badge-active    { background: #D1FAE5; color: #065F46; }
+  .badge-cancelled { background: #FEE2E2; color: #991B1B; }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+    z-index: 500; display: flex; align-items: center; justify-content: center; padding: 1rem;
+    animation: fadeIn .2s ease;
+  }
+  .modal {
+    background: var(--white); border-radius: var(--r-lg);
+    width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp .25s ease;
+  }
+  .modal-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--mid);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-size: 1.1rem; font-weight: 700; }
+  .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--mid); display: flex; justify-content: flex-end; gap: .75rem; }
+  .modal-close-btn { background: none; border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; padding: .25rem; border-radius: var(--r-sm); transition: color .15s; }
+  .modal-close-btn:hover { color: var(--ink); }
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* ─── DASHBOARD STATS ─── */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+  .stat-card {
+    background: var(--white); border-radius: var(--r-lg);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow);
+    border-top: 4px solid transparent;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute; right: -10px; top: -10px;
+    width: 80px; height: 80px; border-radius: 50%;
+    opacity: .06;
+  }
+  .stat-card.v  { border-color: #9B59B6; } .stat-card.v::after { background: #9B59B6; }
+  .stat-card.bl { border-color: var(--volt2); } .stat-card.bl::after { background: var(--volt2); }
+  .stat-card.g  { border-color: var(--ok); } .stat-card.g::after { background: var(--ok); }
+  .stat-card.r  { border-color: var(--danger); } .stat-card.r::after { background: var(--danger); }
+  .stat-card.o  { border-color: var(--warn); } .stat-card.o::after { background: var(--warn); }
+  .stat-label { font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+  .stat-value { font-family: var(--font-display); font-size: 2.2rem; letter-spacing: 1px; line-height: 1; }
+  .stat-sub   { font-size: .78rem; color: var(--muted); margin-top: .25rem; }
+
+  /* ─── HERO (PUBLIC) ─── */
+  .hero {
+    background: var(--ink);
+    color: var(--white);
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,240,0,.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .2em; color: var(--volt); text-transform: uppercase; margin-bottom: .75rem; }
+  .hero-title { font-family: var(--font-display); font-size: clamp(2.5rem, 8vw, 5rem); line-height: 1; letter-spacing: 3px; margin-bottom: 1rem; }
+  .hero-title em { font-style: normal; color: var(--volt); }
+  .hero-sub { font-size: 1rem; color: rgba(255,255,255,.6); max-width: 480px; margin: 0 auto 2rem; }
+  .hero-search {
+    display: flex; gap: .5rem; max-width: 480px; margin: 0 auto;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    border-radius: var(--r-pill); padding: .4rem .4rem .4rem 1.2rem;
+  }
+  .hero-search input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--white); font-size: .95rem;
+  }
+  .hero-search input::placeholder { color: rgba(255,255,255,.4); }
+
+  /* ─── LOGIN PAGE ─── */
+  .login-page {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--ink);
+    padding: 2rem;
+    position: relative; overflow: hidden;
+  }
+  .login-page::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(200,240,0,.03) 40px, rgba(200,240,0,.03) 41px),
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(200,240,0,.03) 40px, rgba(200,240,0,.03) 41px);
+  }
+  .login-card {
+    background: var(--white); border-radius: var(--r-lg);
+    padding: 2.5rem; width: 100%; max-width: 400px;
+    box-shadow: var(--shadow-lg);
+    position: relative; z-index: 1;
+  }
+  .login-logo { font-family: var(--font-display); font-size: 2.5rem; letter-spacing: 3px; color: var(--ink); margin-bottom: .25rem; }
+  .login-logo em { color: var(--volt2); font-style: normal; }
+  .login-sub { font-size: .85rem; color: var(--muted); margin-bottom: 2rem; }
+
+  /* ─── PURCHASE FLOW ─── */
+  .zone-selector { display: flex; flex-direction: column; gap: .75rem; }
+  .zone-option {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem; border-radius: var(--r-md);
+    border: 2px solid var(--mid); cursor: pointer; transition: all .15s;
+    background: var(--white);
+  }
+  .zone-option:hover { border-color: var(--volt2); }
+  .zone-option.selected { border-color: var(--volt); background: #F8FFD9; }
+  .zone-name { font-weight: 700; font-size: .95rem; }
+  .zone-price { font-family: var(--font-mono); font-size: 1rem; font-weight: 600; color: var(--volt2); }
+  .zone-cap   { font-size: .78rem; color: var(--muted); }
+
+  .qty-control { display: flex; align-items: center; gap: .75rem; }
+  .qty-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 2px solid var(--mid); background: none;
+    font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .15s; color: var(--ink);
+    font-family: var(--font-mono);
+  }
+  .qty-btn:hover { border-color: var(--ink); background: var(--ink); color: var(--white); }
+  .qty-display { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; min-width: 2ch; text-align: center; }
+
+  .total-bar {
+    background: var(--ink); color: var(--white);
+    border-radius: var(--r-md); padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .total-label { font-size: .8rem; color: rgba(255,255,255,.6); font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
+  .total-amount { font-family: var(--font-display); font-size: 2rem; color: var(--volt); letter-spacing: 2px; }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .5; }
+  .empty-state-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: .5rem; }
+  .empty-state-sub   { font-size: .875rem; }
+
+  /* ─── FILTER BAR ─── */
+  .filter-bar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .filter-chip {
+    padding: .35rem .9rem; border-radius: var(--r-pill);
+    border: 1.5px solid var(--mid); background: var(--white);
+    font-size: .8rem; font-weight: 600; cursor: pointer; transition: all .15s;
+  }
+  .filter-chip:hover { border-color: var(--ink); }
+  .filter-chip.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+  /* ─── PURCHASE HISTORY TABLE ─── */
+  .purchase-row { transition: background .1s; }
+  .purchase-row:hover { background: #F8FFD9; }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header { margin-bottom: 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .page-title { font-family: var(--font-display); font-size: 2rem; letter-spacing: 2px; }
+  .page-sub   { font-size: .875rem; color: var(--muted); margin-top: .15rem; }
+
+  /* ─── SPINNER ─── */
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--mid); border-top-color: var(--ink); border-radius: 50%; animation: spin .6s linear infinite; }
+  .spinner.sm { width: 18px; height: 18px; border-width: 2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-center { display: flex; align-items: center; justify-content: center; padding: 3rem; }
+
+  /* ─── CHARTS (SVG-based) ─── */
+  .chart-wrap { position: relative; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+  .bar { flex: 1; border-radius: 4px 4px 0 0; transition: opacity .2s; min-width: 12px; }
+  .bar:hover { opacity: .8; }
+  .bar-label { font-size: .65rem; color: var(--muted); text-align: center; margin-top: .3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .nav { padding: 0 1rem; }
+    .nav-brand { font-size: 1.4rem; }
+    .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+    .hero { padding: 2.5rem 1rem 2rem; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .modal { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast-root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef, createContext, useContext } = React;
+
+/* ══════════════════════════════════════════
+   CONFIG & API
+══════════════════════════════════════════ */
+const BASE_URL = 'http://localhost:5223';
+
+const api = {
+  async request(method, path, body, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: `Error ${res.status}` }));
+      throw new Error(err.message || err.title || `Error ${res.status}`);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  },
+  // Auth
+  login: (d) => api.request('POST', '/api/auth/login', d),
+  // Events (Admin)
+  getEventsAdmin: (t) => api.request('GET', '/api/events?onlyActive=false', null, t),
+  createEvent:    (d, t) => api.request('POST', '/api/events', d, t),
+  updateEvent:    (id, d, t) => api.request('PUT', `/api/events/${id}`, d, t),
+  cancelEvent:    (id, t) => api.request('DELETE', `/api/events/${id}`, null, t),
+  deleteEvent:    (id, t) => api.request('DELETE', `/api/events/${id}`, null, t),
+  // Events (Public)
+  getEventsPublic: () => api.request('GET', '/api/events'),
+  getEventDetail:  (id) => api.request('GET', `/api/events/${id}`),
+  // Purchases
+  buyTickets: (d, t) => api.request('POST', '/api/ticketpurchases/buy', d, t || null),
+  getPurchasesAdmin: (t) => api.request('GET', '/api/admin/purchases', null, t),
+  getDashboard: (t) => api.request('GET', '/api/admin/dashboard', null, t),
+  // Users
+  getUsers: (t) => api.request('GET', '/api/admin/users', null, t),
+  normalizeZone: (z) => ({
+    ...z,
+    capacity:  z.capacity  ?? z.totalCapacity    ?? 0,
+    available: z.available ?? z.availableTickets ?? 0,
+  }),
+  normalizeEvent: (ev) => {
+    const zones = (ev.zones || ev.ticketZones || []);
+    return {
+      ...ev,
+      date:  ev.date  || ev.eventDate || '',
+      venue: ev.venue || ev.location  || '',
+      zones: zones.map(z => ({
+        ...z,
+        capacity:  z.capacity  ?? z.totalCapacity    ?? 0,
+        available: z.available ?? z.availableTickets ?? 0,
+      })),
+    };
+  },
+  normalizeEvents: (arr) => (arr || []).map(e => {
+    const zones = (e.zones || e.ticketZones || []);
+    return {
+      ...e,
+      date:  e.date  || e.eventDate || '',
+      venue: e.venue || e.location  || '',
+      zones: zones.map(z => ({
+        ...z,
+        capacity:  z.capacity  ?? z.totalCapacity    ?? 0,
+        available: z.available ?? z.availableTickets ?? 0,
+      })),
+    };
+  }),
+};
+
+/* ══════════════════════════════════════════
+   MOCK DATA (for demo when backend not connected)
+══════════════════════════════════════════ */
+const MOCK = {
+  events: [
+    { id:1, name:'Bad Bunny World Tour', description:'El concierto del año. Reggaetón y más.', date:'2025-08-15T21:00:00', venue:'Foro Sol, CDMX', status:'Active', zones:[{id:1,name:'VIP',price:4500,capacity:200,available:85},{id:2,name:'Preferente',price:2200,capacity:500,available:320},{id:3,name:'General',price:900,capacity:3000,available:1890}] },
+    { id:2, name:'Festival Nrmal 2025', description:'El festival de música alternativa más importante de México.', date:'2025-09-20T16:00:00', venue:'Parque Bicentenario, CDMX', status:'Active', zones:[{id:4,name:'VIP',price:3500,capacity:150,available:60},{id:5,name:'Preferente',price:1800,capacity:600,available:410},{id:6,name:'General',price:700,capacity:5000,available:3100}] },
+    { id:3, name:'TEDx Ciudad de México', description:'Ideas worth spreading. Conferencias de innovación y tecnología.', date:'2025-10-05T09:00:00', venue:'Centro Cultural Universitario', status:'Active', zones:[{id:7,name:'VIP',price:1200,capacity:50,available:20},{id:8,name:'Preferente',price:800,capacity:200,available:145},{id:9,name:'General',price:400,capacity:1000,available:780}] },
+    { id:4, name:'Cirque du Soleil: Kurios', description:'Un gabinete de curiosidades. Teatro acrobático de clase mundial.', date:'2025-07-01T20:00:00', venue:'Auditorio Nacional', status:'Cancelled', zones:[{id:10,name:'VIP',price:2800,capacity:100,available:0},{id:11,name:'Preferente',price:1500,capacity:400,available:0},{id:12,name:'General',price:600,capacity:2000,available:0}] },
+    { id:5, name:'Beyoncé Renaissance Tour', description:'La gira más épica del pop. Una noche que no olvidarás.', date:'2025-11-22T20:30:00', venue:'Estadio Azteca', status:'Active', zones:[{id:13,name:'VIP',price:8500,capacity:300,available:42},{id:14,name:'Preferente',price:4200,capacity:1000,available:680},{id:15,name:'General',price:1500,capacity:8000,available:5400}] },
+    { id:6, name:'Dua Lipa Future Nostalgia', description:'Pop electrónico de talla mundial en su escenario más espectacular.', date:'2025-12-12T21:00:00', venue:'Palacio de los Deportes', status:'Active', zones:[{id:16,name:'VIP',price:6000,capacity:200,available:95},{id:17,name:'Preferente',price:3200,capacity:800,available:520},{id:18,name:'General',price:1200,capacity:5000,available:3800}] },
+  ],
+  purchases: [
+    { id:1, eventName:'Bad Bunny World Tour', zoneName:'VIP', quantity:2, unitPrice:4500, total:9000, purchasedAt:'2025-06-01T14:23:00', buyerEmail:'ana@mail.com' },
+    { id:2, eventName:'Festival Nrmal 2025', zoneName:'General', quantity:4, unitPrice:700, total:2800, purchasedAt:'2025-06-02T09:10:00', buyerEmail:'carlos@mail.com' },
+    { id:3, eventName:'TEDx Ciudad de México', zoneName:'Preferente', quantity:1, unitPrice:800, total:800, purchasedAt:'2025-06-03T18:45:00', buyerEmail:'maria@mail.com' },
+    { id:4, eventName:'Beyoncé Renaissance Tour', zoneName:'VIP', quantity:2, unitPrice:8500, total:17000, purchasedAt:'2025-06-04T11:00:00', buyerEmail:'jose@mail.com' },
+    { id:5, eventName:'Dua Lipa Future Nostalgia', zoneName:'Preferente', quantity:3, unitPrice:3200, total:9600, purchasedAt:'2025-06-05T20:30:00', buyerEmail:'sofia@mail.com' },
+  ],
+  dashboard: {
+    totalRevenue: 39200, totalPurchases: 12, totalEvents: 6, activeEvents: 5,
+    revenueByZone: [ { zone:'VIP', amount:26000 }, { zone:'Preferente', amount:10400 }, { zone:'General',  amount:2800 } ],
+    topEvents: [ { name:'Beyoncé Renaissance Tour', revenue:17000 }, { name:'Dua Lipa Future Nostalgia', revenue:9600 }, { name:'Bad Bunny World Tour', revenue:9000 }, { name:'Festival Nrmal 2025', revenue:2800 }, { name:'TEDx Ciudad de México', revenue:800 } ],
+  }
+};
+
+/* ══════════════════════════════════════════
+   AUTH CONTEXT
+══════════════════════════════════════════ */
+const AuthCtx = createContext(null);
+function AuthProvider({ children }) {
+  const [auth, setAuth] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ev_auth') || 'null'); } catch { return null; }
+  });
+  const login  = (data) => { setAuth(data); localStorage.setItem('ev_auth', JSON.stringify(data)); };
+  const logout = () => { setAuth(null); localStorage.removeItem('ev_auth'); };
+  return <AuthCtx.Provider value={{ auth, login, logout }}>{children}</AuthCtx.Provider>;
+}
+const useAuth = () => useContext(AuthCtx);
+
+/* ══════════════════════════════════════════
+   TOAST SYSTEM
+══════════════════════════════════════════ */
+let _toastId = 0;
+let _setToasts = null;
+const toast = {
+  show(msg, type='success', duration=3200) {
+    if (!_setToasts) return;
+    const id = ++_toastId;
+    _setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => _setToasts(prev => prev.filter(t => t.id !== id)), duration);
+  },
+  success: (m) => toast.show(m, 'success'),
+  error:   (m) => toast.show(m, 'error', 4000),
+  warn:    (m) => toast.show(m, 'warn'),
+};
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+  _setToasts = setToasts;
+  const icons = { success: '✓', error: '✕', warn: '⚠' };
+  return ReactDOM.createPortal(
+    <div id="toast-root">
+      {toasts.map(t => (
+        <div key={t.id} className={`toast ${t.type}`}>
+          <span>{icons[t.type]}</span> {t.msg}
+        </div>
+      ))}
+    </div>,
+    document.getElementById('toast-root')
+  );
+}
+
+/* ══════════════════════════════════════════
+   ICONS (inline SVG)
+══════════════════════════════════════════ */
+const Icon = {
+  Calendar: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  Location: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Ticket:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg>,
+  Plus:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Edit:     () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Trash:    () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  Ban:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
+  Search:   () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Close:    () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Eye:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  Chart:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  Users:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  Back:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>,
+};
+
+/* ══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+const fmt = {
+  date: (s) => new Date(s).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }),
+  datetime: (s) => new Date(s).toLocaleString('es-MX', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+  money: (n) => new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', minimumFractionDigits:0 }).format(n),
+  zoneName: (n) => n === 'VIP' ? 'VIP' : n === 'Preferente' ? 'Preferente' : 'General',
+};
+const zoneClass = (name) => name === 'VIP' ? 'zone-vip' : name === 'Preferente' ? 'zone-pref' : 'zone-gen';
+
+/* ══════════════════════════════════════════
+   REUSABLE COMPONENTS
+══════════════════════════════════════════ */
+function Modal({ title, onClose, children, footer }) {
+  useEffect(() => {
+    const handler = (e) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">{title}</h2>
+          <button className="modal-close-btn" onClick={onClose}><Icon.Close /></button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-footer">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ message, onConfirm, onCancel, danger }) {
+  return (
+    <Modal title="Confirmar acción" onClose={onCancel} footer={
+      <>
+        <button className="btn btn-outline" onClick={onCancel}>Cancelar</button>
+        <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={onConfirm}>Confirmar</button>
+      </>
+    }>
+      <p style={{ fontSize: '.95rem' }}>{message}</p>
+    </Modal>
+  );
+}
+
+function ZonePill({ name }) {
+  return <span className={`zone-pill ${zoneClass(name)}`}>{name}</span>;
+}
+
+function StatusBadge({ status }) {
+  return <span className={`badge ${status === 'Active' ? 'badge-active' : 'badge-cancelled'}`}>
+    {status === 'Active' ? 'Activo' : 'Cancelado'}
+  </span>;
+}
+
+/* ══════════════════════════════════════════
+   LOGIN PAGE
+══════════════════════════════════════════ */
+function LoginPage({ onSuccess }) {
+  const [form, setForm]   = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const validate = () => {
+    const e = {};
+    if (!form.email)    e.email    = 'Ingresa tu correo';
+    if (!form.password) e.password = 'Ingresa tu contraseña';
+    return e;
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({}); setLoading(true);
+    try {
+      const data = await api.login(form);
+      onSuccess(data);
+      toast.success(`Bienvenido, ${data.name}`);
+    } catch(err) {
+      toast.error(err.message || 'Credenciales inválidas');
+    } finally { setLoading(false); }
+  };
+
+  const fill = (email, pass) => setForm({ email, password: pass });
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">Eventos<em>Viva</em></div>
+        <p className="login-sub">Acceso al panel de administración</p>
+
+        <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
+          <div className="form-group">
+            <label className="form-label">Correo electrónico</label>
+            <input className={`form-input ${errors.email ? 'error' : ''}`}
+              type="email" placeholder="admin@miapp.com" autoComplete="email"
+              value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} />
+            {errors.email && <span className="form-error">{errors.email}</span>}
+          </div>
+          <div className="form-group">
+            <label className="form-label">Contraseña</label>
+            <input className={`form-input ${errors.password ? 'error' : ''}`}
+              type="password" placeholder="••••••••" autoComplete="current-password"
+              value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))} />
+            {errors.password && <span className="form-error">{errors.password}</span>}
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading} style={{ marginTop:'.5rem' }}>
+            {loading ? <><span className="spinner sm"></span> Iniciando...</> : 'Iniciar sesión'}
+          </button>
+        </form>
+
+        <div style={{ marginTop:'1.5rem', padding:'1rem', background:'var(--paper)', borderRadius:'var(--r-md)', fontSize:'.78rem' }}>
+          <p style={{ fontWeight:700, marginBottom:'.5rem', color:'var(--muted)' }}>CREDENCIALES DE DEMO</p>
+          <button className="btn btn-outline btn-sm" onClick={() => fill('admin@miapp.com','Admin123!')} style={{ marginRight:'.5rem', marginBottom:'.3rem' }}>
+            Admin — admin@miapp.com
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   EVENT FORM (Create / Edit)
+══════════════════════════════════════════ */
+function EventForm({ initial, onSave, onClose, loading }) {
+  const blankZone = (name, price) => ({ name, price: price || '', capacity: '' });
+  const [form, setForm] = useState(() => {
+    if (initial) {
+      const z = { VIP: null, Preferente: null, General: null };
+      (initial.zones || []).forEach(zone => { z[zone.name] = { id: zone.id, name: zone.name, price: zone.price, capacity: zone.capacity }; });
+      return {
+        name: initial.name || '',
+        description: initial.description || '',
+        date: initial.date ? initial.date.slice(0,16) : '',
+        venue: initial.venue || '',
+        status: initial.status || 'Active',
+        zones: [
+          z.VIP       || blankZone('VIP',       2500),
+          z.Preferente || blankZone('Preferente', 1200),
+          z.General   || blankZone('General',    500),
+        ],
+      };
+    }
+    return {
+      name:'', description:'', date:'', venue:'', status:'Active',
+      zones: [blankZone('VIP',2500), blankZone('Preferente',1200), blankZone('General',500)],
+    };
+  });
+  const [errors, setErrors] = useState({});
+
+  const set = (field, val) => setForm(f => ({...f, [field]: val}));
+  const setZone = (i, field, val) => setForm(f => {
+    const zones = [...f.zones]; zones[i] = {...zones[i], [field]: val}; return {...f, zones};
+  });
+
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim())  e.name  = 'El nombre es requerido';
+    if (!form.date)         e.date  = 'La fecha es requerida';
+    if (!form.venue.trim()) e.venue = 'El lugar es requerido';
+    form.zones.forEach((z, i) => {
+      if (!z.price || isNaN(z.price) || Number(z.price) < 0)
+        e[`zone_price_${i}`] = 'Precio inválido';
+      if (!z.capacity || isNaN(z.capacity) || Number(z.capacity) < 1)
+        e[`zone_cap_${i}`] = 'Capacidad inválida';
+    });
+    return e;
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    onSave({
+      ...form,
+      zones: form.zones.map(z => ({...z, price: Number(z.price), capacity: Number(z.capacity)}))
+    });
+  };
+
+  const zoneColors = { VIP: '#9B59B6', Preferente: '#3498DB', General: '#27AE60' };
+
+  return (
+    <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
+      <div className="form-group">
+        <label className="form-label">Nombre del evento *</label>
+        <input className={`form-input ${errors.name ? 'error' : ''}`} value={form.name}
+          onChange={e => set('name', e.target.value)} placeholder="Ej. Festival de Verano 2025" />
+        {errors.name && <span className="form-error">{errors.name}</span>}
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Descripción</label>
+        <textarea className="form-textarea" value={form.description} rows={3}
+          onChange={e => set('description', e.target.value)} placeholder="Describe el evento..." />
+      </div>
+
+      <div className={`form-grid form-grid-2`}>
+        <div className="form-group">
+          <label className="form-label">Fecha y hora *</label>
+          <input className={`form-input ${errors.date ? 'error' : ''}`} type="datetime-local"
+            value={form.date} onChange={e => set('date', e.target.value)} />
+          {errors.date && <span className="form-error">{errors.date}</span>}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Estado</label>
+          <select className="form-select" value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="Active">Activo</option>
+            <option value="Cancelled">Cancelado</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Lugar *</label>
+        <input className={`form-input ${errors.venue ? 'error' : ''}`} value={form.venue}
+          onChange={e => set('venue', e.target.value)} placeholder="Ej. Auditorio Nacional, CDMX" />
+        {errors.venue && <span className="form-error">{errors.venue}</span>}
+      </div>
+
+      <div>
+        <p className="form-label" style={{ marginBottom:'.75rem' }}>Zonas de boletaje *</p>
+        {form.zones.map((z, i) => (
+          <div key={z.name} style={{ marginBottom:'.75rem', padding:'1rem', borderRadius:'var(--r-md)', border:`2px solid ${zoneColors[z.name]}22`, background:`${zoneColors[z.name]}08` }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'.5rem', marginBottom:'.75rem' }}>
+              <span style={{ width:10, height:10, borderRadius:'50%', background: zoneColors[z.name], display:'inline-block' }}></span>
+              <span style={{ fontWeight:700, fontSize:'.85rem' }}>{z.name}</span>
+            </div>
+            <div className={`form-grid form-grid-2`}>
+              <div className="form-group">
+                <label className="form-label">Precio (MXN)</label>
+                <input className={`form-input ${errors[`zone_price_${i}`] ? 'error' : ''}`}
+                  type="number" min="0" value={z.price} onChange={e => setZone(i,'price',e.target.value)} placeholder="0" />
+                {errors[`zone_price_${i}`] && <span className="form-error">{errors[`zone_price_${i}`]}</span>}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Capacidad</label>
+                <input className={`form-input ${errors[`zone_cap_${i}`] ? 'error' : ''}`}
+                  type="number" min="1" value={z.capacity} onChange={e => setZone(i,'capacity',e.target.value)} placeholder="0" />
+                {errors[`zone_cap_${i}`] && <span className="form-error">{errors[`zone_cap_${i}`]}</span>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="modal-footer" style={{ padding:0, borderTop:'none', marginTop:'.5rem' }}>
+        <button type="button" className="btn btn-outline" onClick={onClose}>Cancelar</button>
+        <button type="submit" className="btn btn-volt" disabled={loading}>
+          {loading ? <><span className="spinner sm"></span> Guardando...</> : (initial ? 'Guardar cambios' : 'Crear evento')}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ══════════════════════════════════════════
+   ADMIN — EVENTS MANAGEMENT
+══════════════════════════════════════════ */
+function AdminEvents({ token }) {
+  const [events, setEvents]         = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState('');
+  const [filterStatus, setFilter]   = useState('all');
+  const [modal, setModal]           = useState(null); // null | 'create' | { event }
+  const [confirmCancel, setConfirmCancel] = useState(null);
+  const [saving, setSaving]         = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getEventsAdmin(token);
+      setEvents(api.normalizeEvents(data) || []);
+    } catch(e) {
+      console.error('Events load error:', e);
+      setEvents([]);
+    } finally { setLoading(false); }
+  }, [token]);
+  
+  useEffect(() => { 
+    load(); 
+    // Recarga cada 15 segundos para ver cambios en disponibilidad
+    const interval = setInterval(load, 15000);
+    return () => clearInterval(interval);
+  }, [load]);
+
+  const filtered = events.filter(ev => {
+    const matchSearch = ev.name.toLowerCase().includes(search.toLowerCase()) ||
+                        ev.venue.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === 'all' || ev.status.toLowerCase() === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const handleCreate = async (form) => {
+    setSaving(true);
+    try {
+      const userIdClaim = JSON.parse(atob(token.split('.')[1]));
+      const payload = {
+        name: form.name,
+        description: form.description || '',
+        eventDate: new Date(form.date).toISOString(),
+        location: form.venue,
+        createdBy: userIdClaim.userId || Number(userIdClaim.sub) || 1
+      };
+      const result = await api.createEvent(payload, token);
+      if (result && result.id) {
+        for (const zone of form.zones) {
+          await api.request('POST', '/api/ticketzones', {
+            eventId: result.id,
+            name: zone.name,
+            price: Number(zone.price),
+            totalCapacity: Number(zone.capacity),
+            availableTickets: Number(zone.capacity)
+          }, token);
+        }
+      }
+      toast.success('Evento creado exitosamente');
+      setModal(null);
+      load();
+    } catch(e) {
+      toast.error('Error al crear el evento: ' + (e.message || 'Intenta de nuevo'));
+    } finally { setSaving(false); }
+  };
+
+  const handleEdit = async (form) => {
+    setSaving(true);
+    try {
+      // 1. Actualizar datos del evento
+      const payload = {
+        name: form.name,
+        description: form.description || '',
+        eventDate: new Date(form.date).toISOString(),
+        location: form.venue
+      };
+      await api.updateEvent(modal.event.id, payload, token);
+
+      // 2. Actualizar zonas (precio y capacidad)
+      for (const zone of form.zones) {
+        if (zone.id) {
+          await api.request('PUT', `/api/ticketzones/${zone.id}`, {
+            name: zone.name,
+            price: Number(zone.price),
+            totalCapacity: Number(zone.capacity)
+          }, token).catch(() => null);
+        }
+      }
+
+      setModal(null);
+      toast.success('Evento actualizado');
+      await load(); // recargar desde la API para mostrar datos reales
+    } catch(e) {
+      toast.error('Error al actualizar el evento: ' + (e.message || ''));
+    } finally { setSaving(false); }
+  };
+
+  const handleCancel = async (ev) => {
+    try {
+      await api.cancelEvent(ev.id, token).catch(() => null);
+      setEvents(prev => prev.map(e => e.id === ev.id ? {...e, status:'Cancelled'} : e));
+      setConfirmCancel(null);
+      toast.warn(`Evento "${ev.name}" cancelado`);
+    } catch(e) { toast.error('No se pudo cancelar'); }
+  };
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">EVENTOS</h1>
+          <p className="page-sub">{events.length} evento{events.length !== 1 ? 's' : ''} registrado{events.length !== 1 ? 's' : ''}</p>
+        </div>
+        <button className="btn btn-volt" onClick={() => setModal('create')}>
+          <Icon.Plus /> Nuevo evento
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display:'flex', gap:'1rem', marginBottom:'1.5rem', flexWrap:'wrap', alignItems:'center' }}>
+        <div style={{ position:'relative', flex:1, minWidth:200 }}>
+          <span style={{ position:'absolute', left:'.75rem', top:'50%', transform:'translateY(-50%)', color:'var(--muted)', display:'flex' }}>
+            <Icon.Search />
+          </span>
+          <input className="form-input" style={{ paddingLeft:'2.25rem' }}
+            placeholder="Buscar evento o lugar…" value={search}
+            onChange={e => setSearch(e.target.value)} />
+        </div>
+        <div className="filter-bar" style={{ margin:0 }}>
+          {[['all','Todos'],['active','Activos'],['cancelled','Cancelados']].map(([v,l]) => (
+            <button key={v} className={`filter-chip ${filterStatus===v?'active':''}`}
+              onClick={() => setFilter(v)}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="loading-center"><div className="spinner"></div></div>
+      ) : (
+        <div className="card">
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Evento</th><th>Fecha</th><th>Lugar</th><th>Zonas / Precio base</th><th>Estado</th><th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={6}>
+                    <div className="empty-state">
+                      <div className="empty-state-icon">🎪</div>
+                      <div className="empty-state-title">Sin resultados</div>
+                      <p className="empty-state-sub">Prueba con otros filtros o crea un nuevo evento.</p>
+                    </div>
+                  </td></tr>
+                ) : filtered.map(ev => (
+                  <tr key={ev.id}>
+                    <td>
+                      <div style={{ fontWeight:600 }}>{ev.name}</div>
+                      {ev.description && <div style={{ maxWidth:200, fontSize:'.75rem', color:'var(--muted)', marginTop:'.15rem' }} className="truncate">{ev.description}</div>}
+                    </td>
+                    <td style={{ whiteSpace:'nowrap', fontSize:'.85rem' }}>
+                      {fmt.datetime(ev.date)}
+                    </td>
+                    <td style={{ fontSize:'.85rem', color:'var(--muted)' }}>{ev.venue}</td>
+                    <td>
+                      <div className="event-zones">
+                        {(ev.zones || []).map(z => (
+                          <span key={z.id || z.name} className={`zone-pill ${zoneClass(z.name)}`}>
+                            {z.name} · {fmt.money(z.price)}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td><StatusBadge status={ev.status} /></td>
+                    <td>
+                      <div style={{ display:'flex', gap:'.4rem' }}>
+                        <button className="btn btn-outline btn-sm btn-icon" title="Editar"
+                          onClick={() => setModal({ event: ev })}>
+                          <Icon.Edit />
+                        </button>
+                        {ev.status === 'Active' && (
+                          <button className="btn btn-sm" style={{ background:'#FFF3CD', color:'#856404', border:'1px solid #FFEAA0' }}
+                            title="Cancelar evento" onClick={() => setConfirmCancel(ev)}>
+                            <Icon.Ban />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {modal === 'create' && (
+        <Modal title="Nuevo evento" onClose={() => setModal(null)}>
+          <EventForm onSave={handleCreate} onClose={() => setModal(null)} loading={saving} />
+        </Modal>
+      )}
+
+      {/* Edit Modal */}
+      {modal?.event && (
+        <Modal title={`Editar: ${modal.event.name}`} onClose={() => setModal(null)}>
+          <EventForm initial={modal.event} onSave={handleEdit} onClose={() => setModal(null)} loading={saving} />
+        </Modal>
+      )}
+
+      {/* Cancel Confirm */}
+      {confirmCancel && (
+        <ConfirmModal danger
+          message={`¿Cancelar el evento "${confirmCancel.name}"? Esta acción no se puede deshacer.`}
+          onConfirm={() => handleCancel(confirmCancel)}
+          onCancel={() => setConfirmCancel(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   ADMIN — DASHBOARD
+══════════════════════════════════════════ */
+function AdminDashboard({ token }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      const d = await api.getDashboard(token);
+      if (d) setData(d);
+    } catch(e) {
+      console.error('Dashboard error:', e);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await loadDashboard();
+      setLoading(false);
+    })();
+
+    // Recarga cada 10 segundos para actualización en tiempo real
+    const interval = setInterval(loadDashboard, 10000);
+    return () => clearInterval(interval);
+  }, [loadDashboard]);
+
+  if (loading) return <div className="loading-center"><div className="spinner"></div></div>;
+  if (!data)   return null;
+
+  const maxRev = Math.max(...(data.topEvents || []).map(e => e.revenue), 1);
+  const zoneColors = { VIP:'#9B59B6', Preferente:'#3498DB', General:'#27AE60' };
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">DASHBOARD</h1>
+          <p className="page-sub">Resumen general de ventas</p>
+        </div>
+      </div>
+
+      <div className="stat-grid">
+        {[
+          { label:'Ingresos totales', value: fmt.money(data.totalRevenue), sub:'En todas las zonas', cls:'bl' },
+          { label:'Compras realizadas', value: data.totalPurchases, sub:'Total de transacciones', cls:'g' },
+          { label:'Eventos totales', value: data.totalEvents, sub:'Registrados en el sistema', cls:'v' },
+          { label:'Eventos activos', value: data.activeEvents, sub:'Próximos y en curso', cls:'o' },
+          { label:'Cancelados', value: (data.totalEvents||0) - (data.activeEvents||0), sub:'Fuera de venta', cls:'r' },
+        ].map(s => (
+          <div key={s.label} className={`stat-card ${s.cls}`}>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value">{s.value}</div>
+            <div className="stat-sub">{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.5rem', marginTop:'1.5rem' }} className="dash-grid">
+        {/* Revenue by Zone */}
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">Ingresos por zona</h3></div>
+          <div className="card-body">
+            {(data.revenueByZone || []).map(z => {
+              const maxZ = Math.max(...data.revenueByZone.map(x=>x.amount), 1);
+              const pct = (z.amount / maxZ) * 100;
+              return (
+                <div key={z.zone} style={{ marginBottom:'1rem' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'.3rem', fontSize:'.85rem', fontWeight:600 }}>
+                    <span style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
+                      <span style={{ width:8, height:8, borderRadius:'50%', background: zoneColors[z.zone], display:'inline-block' }}></span>
+                      {z.zone}
+                    </span>
+                    <span style={{ fontFamily:'var(--font-mono)', fontSize:'.8rem' }}>{fmt.money(z.amount)}</span>
+                  </div>
+                  <div style={{ background:'var(--mid)', borderRadius:'var(--r-pill)', height:8, overflow:'hidden' }}>
+                    <div style={{ width:`${pct}%`, height:'100%', background: zoneColors[z.zone], borderRadius:'var(--r-pill)', transition:'width .4s ease' }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Top Events */}
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">Top eventos por ingreso</h3></div>
+          <div className="card-body">
+            {(data.topEvents || []).map((ev, i) => {
+              const pct = (ev.revenue / maxRev) * 100;
+              return (
+                <div key={ev.name} style={{ marginBottom:'1rem' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'.3rem', fontSize:'.82rem', fontWeight:600 }}>
+                    <span style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
+                      <span style={{ width:18, height:18, borderRadius:'50%', background:'var(--ink)', color:'var(--volt)', fontSize:'.65rem', fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{i+1}</span>
+                      <span className="truncate" style={{ maxWidth:160 }}>{ev.name}</span>
+                    </span>
+                    <span style={{ fontFamily:'var(--font-mono)', fontSize:'.8rem', flexShrink:0, marginLeft:'.5rem' }}>{fmt.money(ev.revenue)}</span>
+                  </div>
+                  <div style={{ background:'var(--mid)', borderRadius:'var(--r-pill)', height:6, overflow:'hidden' }}>
+                    <div style={{ width:`${pct}%`, height:'100%', background:'var(--volt2)', borderRadius:'var(--r-pill)', transition:'width .5s ease' }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <style>{`@media (max-width:768px) { .dash-grid { grid-template-columns:1fr !important; } }`}</style>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   ADMIN — PURCHASES
+══════════════════════════════════════════ */
+function AdminPurchases({ token }) {
+  const [purchases, setPurchases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const raw = await api.getPurchasesAdmin(token).catch(() => null);
+        const normalized = (raw || MOCK.purchases).map(p => ({...p, total: p.total ?? p.totalPrice ?? 0, purchasedAt: p.purchasedAt ?? p.purchaseDate ?? '', buyerEmail: p.buyerEmail ?? p.userEmail ?? p.userName ?? ''}));
+        setPurchases(normalized);
+      } finally { setLoading(false); }
+    })();
+  }, [token]);
+
+  const filtered = purchases.filter(p =>
+    p.eventName?.toLowerCase().includes(search.toLowerCase()) ||
+    p.buyerEmail?.toLowerCase().includes(search.toLowerCase()) ||
+    p.zoneName?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalRevenue = filtered.reduce((sum, p) => sum + (p.total || 0), 0);
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">COMPRAS</h1>
+          <p className="page-sub">{purchases.length} transacción{purchases.length !== 1 ? 'es' : ''} · Total: {fmt.money(totalRevenue)}</p>
+        </div>
+      </div>
+
+      <div style={{ position:'relative', maxWidth:400, marginBottom:'1.5rem' }}>
+        <span style={{ position:'absolute', left:'.75rem', top:'50%', transform:'translateY(-50%)', color:'var(--muted)', display:'flex' }}>
+          <Icon.Search />
+        </span>
+        <input className="form-input" style={{ paddingLeft:'2.25rem' }}
+          placeholder="Buscar por evento, zona o comprador…" value={search}
+          onChange={e => setSearch(e.target.value)} />
+      </div>
+
+      {loading ? (
+        <div className="loading-center"><div className="spinner"></div></div>
+      ) : (
+        <div className="card">
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Evento</th><th>Zona</th><th>Cant.</th><th>Precio unit.</th><th>Total</th><th>Comprador</th><th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={8}>
+                    <div className="empty-state">
+                      <div className="empty-state-icon">🎫</div>
+                      <div className="empty-state-title">Sin compras registradas</div>
+                    </div>
+                  </td></tr>
+                ) : filtered.map(p => (
+                  <tr key={p.id} className="purchase-row">
+                    <td style={{ fontFamily:'var(--font-mono)', fontSize:'.8rem', color:'var(--muted)' }}>#{p.id}</td>
+                    <td style={{ fontWeight:600 }}>{p.eventName}</td>
+                    <td><ZonePill name={p.zoneName} /></td>
+                    <td style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{p.quantity}</td>
+                    <td style={{ fontFamily:'var(--font-mono)', fontSize:'.85rem' }}>{fmt.money(p.unitPrice)}</td>
+                    <td style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--volt2)' }}>{fmt.money(p.total)}</td>
+                    <td style={{ fontSize:'.82rem', color:'var(--muted)' }}>{p.buyerEmail}</td>
+                    <td style={{ fontSize:'.8rem', color:'var(--muted)', whiteSpace:'nowrap' }}>{fmt.datetime(p.purchasedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   ADMIN — USERS
+══════════════════════════════════════════ */
+function AdminUsers({ token }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const d = await api.getUsers(token);
+        setUsers(d);
+      } catch {
+        setUsers([
+          { id:1, name:'Administrador', email:'admin@miapp.com', role:'Admin', createdAt:'2025-01-01T00:00:00' },
+          { id:2, name:'Lector Demo',   email:'reader@miapp.com', role:'Reader', createdAt:'2025-01-01T00:00:00' },
+        ]);
+      } finally { setLoading(false); }
+    })();
+  }, [token]);
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">USUARIOS</h1>
+          <p className="page-sub">{users.length} usuario{users.length !== 1 ? 's' : ''} registrado{users.length !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+      {loading ? (
+        <div className="loading-center"><div className="spinner"></div></div>
+      ) : (
+        <div className="card">
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>#</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Registrado</th></tr></thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id}>
+                    <td style={{ fontFamily:'var(--font-mono)', fontSize:'.8rem', color:'var(--muted)' }}>#{u.id}</td>
+                    <td style={{ fontWeight:600 }}>{u.name}</td>
+                    <td style={{ fontSize:'.85rem', color:'var(--muted)' }}>{u.email}</td>
+                    <td>
+                      <span className={`badge ${u.role === 'Admin' ? 'badge-active' : ''}`}
+                        style={u.role === 'Reader' ? {background:'#EEE', color:'#555'} : {}}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td style={{ fontSize:'.8rem', color:'var(--muted)' }}>{fmt.date(u.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   PUBLIC — EVENT CARD
+══════════════════════════════════════════ */
+function EventCard({ event, onClick }) {
+  const minPrice = Math.min(...(event.zones || []).map(z => z.price));
+  return (
+    <div className="event-card" onClick={() => onClick(event)}>
+      <div className="event-card-top">
+        <span className={`event-card-status ${event.status === 'Active' ? 'active' : 'cancelled'}`}>
+          {event.status === 'Active' ? '● Activo' : '✕ Cancelado'}
+        </span>
+        <div className="event-card-title">{event.name}</div>
+      </div>
+      <div className="event-card-body">
+        <div className="event-meta">
+          <div className="event-meta-item"><Icon.Calendar />{fmt.datetime(event.date)}</div>
+          <div className="event-meta-item"><Icon.Location />{event.venue}</div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div className="event-zones">
+            {(event.zones || []).map(z => (
+              <span key={z.id || z.name} className={`zone-pill ${zoneClass(z.name)}`}>
+                {z.name}
+              </span>
+            ))}
+          </div>
+          <div style={{ fontFamily:'var(--font-mono)', fontSize:'.85rem', fontWeight:700, color:'var(--volt2)' }}>
+            Desde {fmt.money(minPrice)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   PUBLIC — EVENT DETAIL + PURCHASE
+══════════════════════════════════════════ */
+function EventDetail({ event, onBack }) {
+  const [selectedZone, setSelectedZone] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [successPurchase, setSuccessPurchase] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [liveEvent, setLiveEvent] = useState(event);
+
+  const zone = liveEvent.zones?.find(z => z.id === selectedZone);
+  const total = zone ? zone.price * quantity : 0;
+
+  const refreshEvent = async () => {
+    try {
+      const updated = await api.getEventDetail(event.id).catch(() => null);
+      if (updated) setLiveEvent(api.normalizeEvent(updated));
+    } catch(e) {}
+  };
+
+  const handlePurchase = async () => {
+    if (!selectedZone) { toast.warn('Selecciona una zona'); return; }
+    if (!buyerEmail || !/\S+@\S+\.\S+/.test(buyerEmail)) {
+      setEmailError('Ingresa un correo válido'); return;
+    }
+    setEmailError('');
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      let userId = 1;
+      if (token) {
+        try { userId = JSON.parse(atob(token.split('.')[1])).userId || Number(JSON.parse(atob(token.split('.')[1])).sub) || 1; } catch(e) {}
+      }
+      const payload = { eventId: event.id, ticketZoneId: selectedZone, quantity, userId };
+      let result = null;
+      let apiError = null;
+      try { result = await api.buyTickets(payload, token); } catch(err) { apiError = err?.message || 'Error al procesar la compra'; }
+      if (!result || apiError) {
+        toast.error(apiError || 'La compra no pudo completarse. Verifica disponibilidad.');
+        setLoading(false);
+        return;
+      }
+      await refreshEvent();
+      setSuccessPurchase({ zone: zone.name, quantity, total, eventName: event.name, buyerEmail });
+      toast.success('¡Compra realizada exitosamente!');
+    } catch(e) {
+      toast.error('Error al realizar la compra');
+    } finally { setLoading(false); }
+  };
+
+  if (successPurchase) {
+    return (
+      <div className="page container section">
+        <div style={{ maxWidth:540, margin:'0 auto', textAlign:'center' }}>
+          <div style={{ fontSize:'4rem', marginBottom:'1rem' }}>🎫</div>
+          <h2 style={{ fontFamily:'var(--font-display)', fontSize:'2.5rem', letterSpacing:'2px', marginBottom:'.5rem' }}>
+            ¡COMPRA CONFIRMADA!
+          </h2>
+          <p style={{ color:'var(--muted)', marginBottom:'2rem' }}>
+            Tus boletos serán enviados a <strong>{successPurchase.buyerEmail}</strong>
+          </p>
+          <div className="card" style={{ marginBottom:'1.5rem' }}>
+            <div className="card-body">
+              <div style={{ display:'grid', gap:'.75rem' }}>
+                {[
+                  ['Evento', successPurchase.eventName],
+                  ['Zona', successPurchase.zone],
+                  ['Cantidad', `${successPurchase.quantity} boleto${successPurchase.quantity !== 1 ? 's' : ''}`],
+                  ['Total', fmt.money(successPurchase.total)],
+                ].map(([k,v]) => (
+                  <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'.6rem 0', borderBottom:'1px solid var(--mid)', fontSize:'.9rem' }}>
+                    <span style={{ color:'var(--muted)' }}>{k}</span>
+                    <span style={{ fontWeight:700, fontFamily: k==='Total' ? 'var(--font-mono)' : 'inherit' }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <button className="btn btn-primary btn-lg" onClick={onBack}>← Volver a eventos</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <div style={{ background:'var(--ink)', padding:'2rem', color:'var(--white)' }}>
+        <div className="container">
+          <button className="btn btn-outline btn-sm" onClick={onBack}
+            style={{ color:'rgba(255,255,255,.7)', borderColor:'rgba(255,255,255,.25)', marginBottom:'1.25rem' }}>
+            <Icon.Back /> Volver
+          </button>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'1rem', flexWrap:'wrap' }}>
+            <div>
+              <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,5vw,3rem)', letterSpacing:'2px', lineHeight:1.1, marginBottom:'.75rem' }}>
+                {event.name}
+              </h1>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:'1.5rem', fontSize:'.875rem', color:'rgba(255,255,255,.6)' }}>
+                <span style={{ display:'flex', alignItems:'center', gap:'.4rem' }}><Icon.Calendar />{fmt.datetime(event.date)}</span>
+                <span style={{ display:'flex', alignItems:'center', gap:'.4rem' }}><Icon.Location />{event.venue}</span>
+              </div>
+            </div>
+            <StatusBadge status={event.status} />
+          </div>
+          {event.description && <p style={{ marginTop:'1rem', color:'rgba(255,255,255,.55)', maxWidth:600, fontSize:'.9rem', lineHeight:1.6 }}>{event.description}</p>}
+        </div>
+      </div>
+
+      <div className="container section">
+        {event.status === 'Cancelled' ? (
+          <div className="card">
+            <div className="card-body" style={{ textAlign:'center', padding:'3rem' }}>
+              <div style={{ fontSize:'2.5rem', marginBottom:'1rem' }}>🚫</div>
+              <h3 style={{ fontWeight:700, marginBottom:'.5rem' }}>Evento cancelado</h3>
+              <p style={{ color:'var(--muted)' }}>No es posible adquirir boletos para este evento.</p>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 380px', gap:'2rem', alignItems:'start' }} className="detail-grid">
+            <div>
+              <h2 style={{ fontWeight:700, marginBottom:'1.25rem', fontSize:'1rem', textTransform:'uppercase', letterSpacing:'.08em', color:'var(--muted)' }}>
+                Selecciona tu zona
+              </h2>
+              <div className="zone-selector">
+                {(liveEvent.zones || []).map(z => (
+                  <div key={z.id} className={`zone-option ${selectedZone===z.id?'selected':''}`}
+                    onClick={() => { setSelectedZone(z.id); setQuantity(1); }}>
+                    <div>
+                      <div className="zone-name" style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
+                        <ZonePill name={z.name} />
+                        {z.name}
+                      </div>
+                      <div className="zone-cap">Capacidad: {z.capacity?.toLocaleString()} · Disponibles: {z.available ?? z.capacity}</div>
+                    </div>
+                    <div className="zone-price">{fmt.money(z.price)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ position:'sticky', top:'76px' }}>
+              <div className="card">
+                <div className="card-header"><h3 className="card-title">Tu compra</h3></div>
+                <div className="card-body" style={{ display:'flex', flexDirection:'column', gap:'1.25rem' }}>
+                  {selectedZone ? (
+                    <>
+                      <div>
+                        <p style={{ fontSize:'.78rem', fontWeight:600, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'.5rem' }}>Zona seleccionada</p>
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                          <ZonePill name={zone?.name} />
+                          <span style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{fmt.money(zone?.price)} c/u</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p style={{ fontSize:'.78rem', fontWeight:600, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'.75rem' }}>Cantidad</p>
+                        <div className="qty-control">
+                          <button className="qty-btn" onClick={() => setQuantity(q => Math.max(1, q-1))}>−</button>
+                          <span className="qty-display">{quantity}</span>
+                          <button className="qty-btn" onClick={() => setQuantity(q => Math.min(10, q+1))}>+</button>
+                          <span style={{ fontSize:'.78rem', color:'var(--muted)' }}>máx. 10</span>
+                        </div>
+                      </div>
+
+                      <div className="total-bar">
+                        <div>
+                          <div className="total-label">Total</div>
+                          <div style={{ fontSize:'.75rem', color:'rgba(255,255,255,.4)' }}>{quantity} × {fmt.money(zone?.price)}</div>
+                        </div>
+                        <div className="total-amount">{fmt.money(total)}</div>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Correo para tus boletos</label>
+                        <input className={`form-input ${emailError ? 'error' : ''}`} type="email"
+                          placeholder="tu@correo.com" value={buyerEmail}
+                          onChange={e => { setBuyerEmail(e.target.value); setEmailError(''); }} />
+                        {emailError && <span className="form-error">{emailError}</span>}
+                      </div>
+
+                      <button className="btn btn-volt btn-lg" style={{ width:'100%' }}
+                        onClick={handlePurchase} disabled={loading}>
+                        {loading ? <><span className="spinner sm"></span> Procesando...</> : <>🎫 Comprar boletos</>}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="empty-state" style={{ padding:'1.5rem 1rem' }}>
+                      <div className="empty-state-icon" style={{ fontSize:'2rem' }}>👆</div>
+                      <div className="empty-state-title" style={{ fontSize:'.95rem' }}>Elige una zona</div>
+                      <p className="empty-state-sub">Selecciona VIP, Preferente o General para continuar.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      <style>{`@media (max-width:768px) { .detail-grid { grid-template-columns:1fr !important; } }`}</style>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   PUBLIC — EVENT LIST
+══════════════════════════════════════════ */
+function PublicEvents({ onSelectEvent }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('active');
+
+  const loadEvents = useCallback(async () => {
+    try {
+      const d = await api.getEventsPublic();
+      setEvents(api.normalizeEvents(d) || []);
+    } catch(e) {
+      console.error('Public events error:', e);
+      setEvents([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await loadEvents();
+      setLoading(false);
+    })();
+    
+    // Recarga cada 15 segundos
+    const interval = setInterval(loadEvents, 15000);
+    return () => clearInterval(interval);
+  }, [loadEvents]);
+
+  const filtered = events.filter(ev => {
+    const matchSearch = ev.name.toLowerCase().includes(search.toLowerCase()) ||
+                        ev.venue?.toLowerCase().includes(search.toLowerCase()) ||
+                        ev.description?.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === 'all' ? true : filter === 'active' ? ev.status === 'Active' : ev.status === 'Cancelled';
+    return matchSearch && matchFilter;
+  });
+
+  return (
+    <div className="page">
+      {/* HERO */}
+      <div className="hero">
+        <div className="hero-eyebrow">🎪 EventosViva — Boletaje en línea</div>
+        <h1 className="hero-title">VIVE LA<br/><em>EXPERIENCIA</em></h1>
+        <p className="hero-sub">Conciertos, conferencias y espectáculos. Tu boleto a momentos únicos.</p>
+        <div className="hero-search">
+          <Icon.Search />
+          <input placeholder="Buscar eventos, artistas o lugares…" value={search}
+            onChange={e => setSearch(e.target.value)} />
+          <button className="btn btn-volt btn-sm">Buscar</button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="container section">
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'1rem', marginBottom:'1.5rem' }}>
+          <div>
+            <h2 style={{ fontFamily:'var(--font-display)', fontSize:'1.6rem', letterSpacing:'2px' }}>
+              {filter === 'active' ? 'PRÓXIMOS EVENTOS' : filter === 'all' ? 'TODOS LOS EVENTOS' : 'EVENTOS CANCELADOS'}
+            </h2>
+            <p style={{ fontSize:'.8rem', color:'var(--muted)', marginTop:'.2rem' }}>{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="filter-bar" style={{ margin:0 }}>
+            {[['active','Solo activos'],['all','Todos'],['cancelled','Cancelados']].map(([v,l]) => (
+              <button key={v} className={`filter-chip ${filter===v?'active':''}`}
+                onClick={() => setFilter(v)}>{l}</button>
+            ))}
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="loading-center"><div className="spinner"></div></div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">🔍</div>
+            <div className="empty-state-title">No encontramos eventos</div>
+            <p className="empty-state-sub">Prueba con otras palabras o cambia el filtro.</p>
+          </div>
+        ) : (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:'1.25rem' }}>
+            {filtered.map(ev => (
+              <EventCard key={ev.id} event={ev} onClick={onSelectEvent} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   ADMIN LAYOUT
+══════════════════════════════════════════ */
+function AdminLayout({ auth, onLogout, onBack }) {
+  const [section, setSection] = useState('dashboard');
+  const navItems = [
+    { id:'dashboard', label:'Dashboard', icon:Icon.Chart },
+    { id:'events',    label:'Eventos',   icon:Icon.Ticket },
+    { id:'purchases', label:'Compras',   icon:Icon.Eye },
+    { id:'users',     label:'Usuarios',  icon:Icon.Users },
+  ];
+
+  return (
+    <>
+      <nav className="nav">
+        <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
+          <button className="nav-link" onClick={onBack}
+            style={{ display:'flex', alignItems:'center', gap:'.35rem', color:'rgba(255,255,255,.6)', border:'1px solid rgba(255,255,255,.2)', borderRadius:'var(--r-sm)', padding:'.3rem .75rem', fontSize:'.8rem' }}>
+            <Icon.Back /> Portal
+          </button>
+          <div className="nav-brand">Eventos<span>Viva</span> <span style={{ fontSize:'.75rem', background:'var(--volt)', color:'var(--ink)', padding:'.15rem .5rem', borderRadius:'var(--r-sm)', fontFamily:'var(--font-mono)', letterSpacing:0, fontWeight:700, marginLeft:'.25rem' }}>Admin</span></div>
+        </div>
+        <div className="nav-links">
+          {navItems.map(item => (
+            <button key={item.id} className={`nav-link ${section===item.id?'active':''}`}
+              onClick={() => setSection(item.id)}>
+              {item.label}
+            </button>
+          ))}
+          <button className="nav-link" onClick={onLogout} style={{ color:'var(--danger)' }}>
+            Salir
+          </button>
+        </div>
+      </nav>
+      <div className="container section" style={{ paddingTop:'1.5rem' }}>
+        {section === 'dashboard' && <AdminDashboard token={auth.token} />}
+        {section === 'events'    && <AdminEvents    token={auth.token} />}
+        {section === 'purchases' && <AdminPurchases token={auth.token} />}
+        {section === 'users'     && <AdminUsers     token={auth.token} />}
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════
+   PUBLIC LAYOUT
+══════════════════════════════════════════ */
+function PublicLayout({ onAdminLogin }) {
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  if (selectedEvent) {
+    return <EventDetail event={selectedEvent} onBack={() => setSelectedEvent(null)} />;
+  }
+
+  return (
+    <>
+      <nav className="nav">
+        <div className="nav-brand">Eventos<span>Viva</span></div>
+        <div className="nav-links">
+          <button className="nav-link volt" onClick={onAdminLogin}>Admin →</button>
+        </div>
+      </nav>
+      <PublicEvents onSelectEvent={setSelectedEvent} />
+      <footer style={{ background:'var(--ink)', color:'rgba(255,255,255,.4)', textAlign:'center', padding:'1.5rem', fontSize:'.8rem', marginTop:'4rem', fontFamily:'var(--font-mono)' }}>
+        EventosViva · Sistema de Boletaje · {new Date().getFullYear()}
+      </footer>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════
+   ROOT APP
+══════════════════════════════════════════ */
+function App() {
+  const { auth, login, logout } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
+
+  if (showLogin && !auth) {
+    return (
+      <>
+        <LoginPage onSuccess={(data) => { login(data); setShowLogin(false); }} />
+        <ToastContainer />
+      </>
+    );
+  }
+
+  if (auth?.role === 'Admin') {
+    return (
+      <>
+        <AdminLayout auth={auth} onLogout={() => { logout(); setShowLogin(false); }} onBack={() => { logout(); setShowLogin(false); }} />
+        <ToastContainer />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PublicLayout onAdminLogin={() => setShowLogin(true)} />
+      <ToastContainer />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <AuthProvider><App /></AuthProvider>
+);
+</script>
+</body>
+</html>

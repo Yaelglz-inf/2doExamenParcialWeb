@@ -1,0 +1,158 @@
+@baseUrl = https://localhost:7046/api
+@contentType = application/json
+
+### Variables
+@token = tu_token_aqui
+@adminUserId = 1
+@readerId = 2
+@eventId = 1
+@ticketZoneId = 1
+
+### ==================== AUTH ====================
+
+### Login Admin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@ejemplo.com",
+  "password": "Admin123"
+}
+
+### Login Reader
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "reader@ejemplo.com",
+  "password": "Reader123"
+}
+
+### ==================== EVENTS - PUBLIC ====================
+
+### Obtener todos los eventos activos
+GET {{baseUrl}}/events?onlyActive=true
+
+### Obtener todos los eventos (incluyendo cancelados)
+GET {{baseUrl}}/events?onlyActive=false
+
+### Obtener evento por ID
+GET {{baseUrl}}/events/{{eventId}}
+
+### Buscar eventos con filtros
+GET {{baseUrl}}/events/search?searchTerm=concierto&location=Madrid&pageNumber=1&pageSize=10
+
+### Buscar por rango de fechas
+GET {{baseUrl}}/events/search?startDate=2026-06-01&endDate=2026-12-31
+
+### ==================== EVENTS - ADMIN ====================
+
+### Crear evento (solo Admin)
+POST {{baseUrl}}/events
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Concierto de Rock",
+  "description": "Un increíble concierto de rock con bandas locales",
+  "eventDate": "2026-07-15T19:00:00",
+  "location": "Madrid, Palacio Vistalegre",
+  "createdBy": {{adminUserId}}
+}
+
+### Editar evento (solo Admin)
+PUT {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Concierto de Rock - Actualizado",
+  "description": "Un increíble concierto de rock con bandas locales",
+  "eventDate": "2026-07-20T19:00:00",
+  "location": "Madrid, Palacio Vistalegre"
+}
+
+### Cancelar evento (solo Admin)
+DELETE {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{token}}
+
+### ==================== TICKET ZONES ====================
+
+### Obtener zonas de un evento
+GET {{baseUrl}}/ticketzones/event/{{eventId}}
+
+### Crear zona de tickets (solo Admin)
+POST {{baseUrl}}/ticketzones
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "eventId": {{eventId}},
+  "name": "VIP",
+  "price": 150.00,
+  "totalCapacity": 100
+}
+
+### Crear zona General
+POST {{baseUrl}}/ticketzones
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "eventId": {{eventId}},
+  "name": "General",
+  "price": 50.00,
+  "totalCapacity": 500
+}
+
+### Editar zona de tickets (solo Admin)
+PUT {{baseUrl}}/ticketzones/{{ticketZoneId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "VIP Premium",
+  "price": 200.00,
+  "totalCapacity": 150
+}
+
+### ==================== TICKET PURCHASES ====================
+
+### Comprar tickets
+POST {{baseUrl}}/ticketpurchases/buy
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "eventId": {{eventId}},
+  "ticketZoneId": {{ticketZoneId}},
+  "userId": {{readerId}},
+  "quantity": 2
+}
+
+### Obtener mis compras (usuario actual)
+GET {{baseUrl}}/ticketpurchases/my-purchases
+Authorization: Bearer {{token}}
+
+### ==================== REPORTS & DASHBOARD ====================
+
+### Dashboard de ventas - Todos los eventos (solo Admin)
+GET {{baseUrl}}/reports/sales-dashboard
+Authorization: Bearer {{token}}
+
+### Dashboard de ventas - Evento específico (solo Admin)
+GET {{baseUrl}}/reports/sales-dashboard?eventId={{eventId}}
+Authorization: Bearer {{token}}
+
+### Mis tickets comprados
+GET {{baseUrl}}/reports/my-tickets
+Authorization: Bearer {{token}}
+
+### ==================== NOTAS ====================
+# - Reemplaza {{token}} con tu JWT token obtenido del login
+# - Reemplaza los IDs de evento, zona, usuario según sea necesario
+# - Algunos endpoints requieren autenticación (Authorization: Bearer)
+# - Solo Admin puede crear/editar/cancelar eventos y zonas
+# - Solo Admin puede ver el dashboard de ventas
+# - Cualquier usuario autenticado puede comprar tickets
+# - Cualquiera puede ver eventos públicos sin autenticación

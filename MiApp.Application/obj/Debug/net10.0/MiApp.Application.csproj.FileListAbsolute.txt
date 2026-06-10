@@ -1,0 +1,30 @@
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Application.deps.json
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Application.dll
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Application.pdb
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Domain.dll
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Domain.pdb
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.csproj.AssemblyReference.cache
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.AssemblyInfoInputs.cache
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.AssemblyInfo.cs
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.csproj.CoreCompileInputs.cache
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Ap.4971B6B6.Up2Date
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.dll
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\refint\MiApp.Application.dll
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.pdb
+C:\Users\nvgs5\OneDrive\Escritorio\SegundoExamenParcialWeb-LIMPIO (1)\SegundoExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\ref\MiApp.Application.dll
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Application.deps.json
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Application.dll
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Application.pdb
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Domain.dll
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\bin\Debug\net10.0\MiApp.Domain.pdb
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.csproj.AssemblyReference.cache
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.AssemblyInfoInputs.cache
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.AssemblyInfo.cs
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.csproj.CoreCompileInputs.cache
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Ap.4971B6B6.Up2Date
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.dll
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\refint\MiApp.Application.dll
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\MiApp.Application.pdb
+C:\Users\nvgs5\Downloads\2doExamenParcialWeb-main\2doExamenParcialWeb-main\MiApp.Application\obj\Debug\net10.0\ref\MiApp.Application.dll
